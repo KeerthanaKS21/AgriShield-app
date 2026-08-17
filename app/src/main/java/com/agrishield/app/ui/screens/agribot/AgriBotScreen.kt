@@ -134,58 +134,74 @@ fun AgriBotScreen(
                             }
                         }
                         Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(text = "AgriBot AI", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                            Text(
-                                text = if (selectedLanguage == "ta-IN") "தமிழ் (Tamil) Voice Active" else "English Voice Active",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = AgriGreenPrimary)
-                            )
-                        }
+                    val isTa = selectedLanguage.startsWith("ta")
+                    Column {
+                        Text(
+                            text = if (isTa) "அக்ரிபாட் AI" else "AgriBot AI",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = if (isTa) "தமிழ் உரையாடல் செயலில் உள்ளது" else "English Conversation Active",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = AgriGreenPrimary)
+                        )
                     }
-                },
-                actions = {
-                    // Language Switcher Chip
-                    Card(
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = AgriGreenMint),
-                        modifier = Modifier.clickable {
-                            val nextLang = if (selectedLanguage == "ta-IN") "en-IN" else "ta-IN"
-                            viewModel.setLanguage(nextLang)
-                        }
-                    ) {
-                        Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Language, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = if (selectedLanguage == "ta-IN") "தமிழ்" else "EN",
-                                color = AgriGreenPrimary,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
+                }
+            },
+            actions = {
+                // Language Switcher Chip
+                val isTa = selectedLanguage.startsWith("ta")
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AgriGreenMint),
+                    modifier = Modifier.clickable {
+                        val nextLang = if (isTa) "en" else "ta"
+                        viewModel.setLanguage(nextLang)
                     }
+                ) {
+                    Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Language, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (isTa) "தமிழ்" else "EN",
+                            color = AgriGreenPrimary,
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                }
 
-                    IconButton(onClick = { viewModel.clearHistory() }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Clear Chat", tint = TextSecondary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color(0xFFF7FAF8)
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // Quick Prompt Chips Carousel
-            val sampleChips = listOf(
+                IconButton(onClick = { viewModel.clearHistory() }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Clear Chat", tint = TextSecondary)
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+        )
+    },
+    containerColor = Color(0xFFF7FAF8)
+) { padding ->
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+    ) {
+        val isTa = selectedLanguage.startsWith("ta")
+        // Quick Prompt Chips Carousel
+        val sampleChips = if (isTa) {
+            listOf(
                 "தக்காளி இலைகளில் கருப்பு புள்ளிகள்",
-                "My rice leaves are turning yellow",
+                "நெல் இலைகள் மஞ்சளாக மாறுகின்றன",
                 "மழை வரப்போகிறது, உரம் இடலாமா?",
                 "இன்றைய பாசன அளவு என்ன?",
-                "Best organic fertilizer for vegetative stage"
+                "வளர்ச்சி பருவத்திற்கான சிறந்த இயற்கை உரம்"
             )
+        } else {
+            listOf(
+                "Black spots on tomato leaves",
+                "My rice leaves are turning yellow",
+                "Rain forecast: should I apply fertilizer?",
+                "What is today's irrigation schedule?",
+                "Best organic fertilizer for growth stage"
+            )
+        }
 
             LazyRow(
                 modifier = Modifier

@@ -86,6 +86,9 @@ fun DiagnoseScreen(
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
+    val currentLang by com.agrishield.app.utils.AppLanguageManager.currentLanguage.collectAsState()
+    val isTa = currentLang.startsWith("ta")
+
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
     // Camera Capture Launcher
@@ -118,7 +121,7 @@ fun DiagnoseScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Crop Disease Diagnosis",
+                        text = if (isTa) "பயிர் நோய் கண்டறிதல்" else "Crop Disease Diagnosis",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
@@ -152,7 +155,8 @@ fun DiagnoseScreen(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Take a close-up photo of the affected plant leaf under clear daylight for highest ML accuracy.",
+                        text = if (isTa) "பாதிக்கப்பட்ட இலையின் தெளிவான புகைப்படத்தை நல்ல வெளிச்சத்தில் எடுக்கவும்."
+                               else "Take a close-up photo of the affected plant leaf under clear daylight for highest ML accuracy.",
                         style = MaterialTheme.typography.bodySmall.copy(color = AgriGreenDark)
                     )
                 }
@@ -173,7 +177,7 @@ fun DiagnoseScreen(
                 if (bitmap != null) {
                     Image(
                         bitmap = bitmap!!.asImageBitmap(),
-                        contentDescription = "Selected Leaf Preview",
+                        contentDescription = "Selected Leaf",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -183,30 +187,22 @@ fun DiagnoseScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Card(
-                            shape = CircleShape,
-                            colors = CardDefaults.cardColors(containerColor = AgriGreenMint),
-                            modifier = Modifier.size(64.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Icon(
-                                    Icons.Default.PhotoCamera,
-                                    contentDescription = null,
-                                    tint = AgriGreenPrimary,
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Icon(
+                            Icons.Default.PhotoCamera,
+                            contentDescription = null,
+                            tint = AgriGreenPrimary,
+                            modifier = Modifier.size(54.dp)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "No Image Selected",
+                            text = if (isTa) "இலை படம் தேர்ந்தெடுக்கப்படவில்லை" else "No Leaf Image Selected",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
                             )
                         )
                         Text(
-                            text = "Capture with Camera or Select from Gallery",
+                            text = if (isTa) "கேமரா அல்லது கேலரியிலிருந்து படம் பதிவேற்றவும்" else "Capture a leaf photo or pick from your device gallery",
                             style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
                         )
                     }
@@ -221,7 +217,7 @@ fun DiagnoseScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 AgriOutlinedButton(
-                    text = "Camera",
+                    text = if (isTa) "கேமரா" else "Camera",
                     icon = Icons.Default.PhotoCamera,
                     modifier = Modifier.weight(1f),
                     onClick = {
@@ -232,7 +228,7 @@ fun DiagnoseScreen(
                 )
 
                 AgriOutlinedButton(
-                    text = "Gallery",
+                    text = if (isTa) "கேலரி" else "Gallery",
                     icon = Icons.Default.PhotoLibrary,
                     modifier = Modifier.weight(1f),
                     onClick = { galleryLauncher.launch("image/*") }
@@ -252,7 +248,7 @@ fun DiagnoseScreen(
                     }
                 } else {
                     AgriPrimaryButton(
-                        text = "Analyze Leaf with TensorFlow Lite",
+                        text = if (isTa) "AI மூலம் நோயைக் கண்டறியவும்" else "Analyze Leaf with TensorFlow Lite",
                         icon = Icons.Default.Psychology,
                         onClick = { viewModel.analyzeImage() }
                     )
@@ -387,10 +383,12 @@ fun DiagnoseScreen(
 
                         // Consult AgriBot Button
                         AgriOutlinedButton(
-                            text = "Consult AgriBot for Step-by-Step Plan",
+                            text = if (isTa) "அக்ரிபாட்டிடம் சிகிச்சை முறை கேட்க" else "Consult AgriBot for Step-by-Step Plan",
                             icon = Icons.Default.Psychology,
                             onClick = {
-                                onNavigateToAgriBot("My crop has ${diagnosis!!.disease}. Please provide an exact step-by-step treatment schedule.")
+                                val prompt = if (isTa) "என் பயிரில் ${diagnosis!!.disease} கண்டறியப்பட்டுள்ளது. படிப்படியான சிகிச்சை முறைகளை கூறவும்."
+                                             else "My crop has ${diagnosis!!.disease}. Please provide an exact step-by-step treatment schedule."
+                                onNavigateToAgriBot(prompt)
                             }
                         )
 
@@ -406,7 +404,7 @@ fun DiagnoseScreen(
                                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AgriGreenPrimary)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Saved to Farm Records",
+                                    text = if (isTa) "பண்ணை பதிவேட்டில் சேமிக்கப்பட்டது" else "Saved to Farm Records",
                                     color = AgriGreenPrimary,
                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                                 )
@@ -417,7 +415,7 @@ fun DiagnoseScreen(
                             }
                         } else {
                             AgriPrimaryButton(
-                                text = "Save to Farm History",
+                                text = if (isTa) "பண்ணை பதிவேட்டில் சேமிக்க" else "Save to Farm History",
                                 icon = Icons.Default.CloudUpload,
                                 onClick = { viewModel.saveDiagnosis() }
                             )

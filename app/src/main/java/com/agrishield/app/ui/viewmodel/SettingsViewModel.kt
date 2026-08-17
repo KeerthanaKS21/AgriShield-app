@@ -19,28 +19,10 @@ class SettingsViewModel(
         context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
 
     val currentUser: StateFlow<User?> = authRepository.currentUser
-
-    private val _currentLanguage = MutableStateFlow(prefs.getString(Constants.KEY_LANGUAGE, "en") ?: "en")
-    val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
-
-    private val _customGeminiKey = MutableStateFlow(prefs.getString(Constants.KEY_CUSTOM_GEMINI_KEY, "") ?: "")
-    val customGeminiKey: StateFlow<String> = _customGeminiKey.asStateFlow()
-
-    private val _customWeatherKey = MutableStateFlow(prefs.getString(Constants.KEY_CUSTOM_WEATHER_KEY, "") ?: "")
-    val customWeatherKey: StateFlow<String> = _customWeatherKey.asStateFlow()
+    val currentLanguage: StateFlow<String> = com.agrishield.app.utils.AppLanguageManager.currentLanguage
 
     fun setLanguage(lang: String) {
-        _currentLanguage.value = lang
-        prefs.edit().putString(Constants.KEY_LANGUAGE, lang).apply()
-    }
-
-    fun saveApiKeys(geminiKey: String, weatherKey: String) {
-        _customGeminiKey.value = geminiKey.trim()
-        _customWeatherKey.value = weatherKey.trim()
-        prefs.edit()
-            .putString(Constants.KEY_CUSTOM_GEMINI_KEY, geminiKey.trim())
-            .putString(Constants.KEY_CUSTOM_WEATHER_KEY, weatherKey.trim())
-            .apply()
+        com.agrishield.app.utils.AppLanguageManager.setLanguage(lang)
     }
 
     fun signOut() {

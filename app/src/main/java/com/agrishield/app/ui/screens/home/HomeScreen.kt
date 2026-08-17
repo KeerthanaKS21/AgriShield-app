@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
@@ -64,6 +65,7 @@ import com.agrishield.app.ui.theme.BorderLight
 import com.agrishield.app.ui.theme.TextPrimary
 import com.agrishield.app.ui.theme.TextSecondary
 import com.agrishield.app.ui.viewmodel.HomeViewModel
+import com.agrishield.app.utils.AppLanguageManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,8 +78,9 @@ fun HomeScreen(
     val diagnosis by viewModel.latestDiagnosis.collectAsState()
     val health by viewModel.farmHealth.collectAsState()
     val risk by viewModel.currentRisk.collectAsState()
+    val currentLang by AppLanguageManager.currentLanguage.collectAsState()
 
-    val isTamil = user?.preferredLanguage == "ta"
+    val isTamil = currentLang.startsWith("ta")
 
     Scaffold(
         topBar = {
@@ -89,14 +92,41 @@ fun HomeScreen(
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = "${user?.location ?: "Tamil Nadu"} • ${user?.primaryCrop ?: "Tomato"}",
+                            text = "${user?.location ?: if (isTamil) "தமிழ்நாடு" else "Tamil Nadu"} • ${if (isTamil && user?.primaryCrop == "Tomato") "தக்காளி" else (user?.primaryCrop ?: "Tomato")}",
                             style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
                         )
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.refreshDashboard() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = AgriGreenPrimary)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Card(
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = AgriGreenMint),
+                            modifier = Modifier.clickable {
+                                AppLanguageManager.toggleLanguage()
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Language,
+                                    contentDescription = "Language",
+                                    tint = AgriGreenPrimary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (isTamil) "தமிழ்" else "EN",
+                                    color = AgriGreenPrimary,
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+                        }
+                        IconButton(onClick = { viewModel.refreshDashboard() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = AgriGreenPrimary)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -114,6 +144,7 @@ fun HomeScreen(
             // 1. Live Weather Card
             WeatherCard(
                 weather = weather,
+                isTamil = isTamil,
                 modifier = Modifier.clickable { onNavigate(Screen.WeatherRisk.route) }
             )
 

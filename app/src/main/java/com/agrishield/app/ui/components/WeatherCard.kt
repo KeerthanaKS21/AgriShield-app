@@ -38,6 +38,7 @@ import com.agrishield.app.ui.theme.AgriGreenPrimary
 @Composable
 fun WeatherCard(
     weather: WeatherData?,
+    isTamil: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -62,7 +63,7 @@ fun WeatherCard(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Loading Live Weather Data...",
+                        text = if (isTamil) "நேரலை வானிலை தரவு ஏற்றப்படுகிறது..." else "Loading Live Weather Data...",
                         color = Color.White.copy(alpha = 0.8f),
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -83,13 +84,13 @@ fun WeatherCard(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = weather.cityName.ifBlank { "Farm Location" },
+                                text = weather.cityName.ifBlank { if (isTamil) "பண்ணை அமைவிடம்" else "Farm Location" },
                                 color = Color.White,
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                         }
                         Text(
-                            text = weather.condition,
+                            text = if (isTamil) translateWeatherCondition(weather.condition) else weather.condition,
                             color = Color(0xFFE8F5E9),
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -112,7 +113,8 @@ fun WeatherCard(
                                 )
                             )
                             Text(
-                                text = "Feels like ${weather.feelsLikeCelsius.toInt()}°C • ${weather.conditionDescription}",
+                                text = if (isTamil) "உணரப்படுவது ${weather.feelsLikeCelsius.toInt()}°C • ${translateWeatherDescription(weather.conditionDescription)}"
+                                       else "Feels like ${weather.feelsLikeCelsius.toInt()}°C • ${weather.conditionDescription}",
                                 color = Color.White.copy(alpha = 0.8f),
                                 style = MaterialTheme.typography.bodySmall
                             )
@@ -135,23 +137,45 @@ fun WeatherCard(
                     ) {
                         WeatherMetricPill(
                             icon = Icons.Default.WaterDrop,
-                            label = "Humidity",
+                            label = if (isTamil) "ஈரப்பதம்" else "Humidity",
                             value = "${weather.humidityPercentage}%"
                         )
                         WeatherMetricPill(
                             icon = Icons.Default.Air,
-                            label = "Wind",
+                            label = if (isTamil) "காற்று" else "Wind",
                             value = "${weather.windSpeedKmh.toInt()} km/h"
                         )
                         WeatherMetricPill(
                             icon = Icons.Default.WaterDrop,
-                            label = "Rain (3h)",
+                            label = if (isTamil) "மழை (3h)" else "Rain (3h)",
                             value = "${weather.rainMmLast3h} mm"
                         )
                     }
                 }
             }
         }
+    }
+}
+
+private fun translateWeatherCondition(condition: String): String {
+    return when (condition.lowercase()) {
+        "clear" -> "தெளிவான வானம்"
+        "clouds" -> "மேகமூட்டம்"
+        "rain" -> "மழை"
+        "drizzle" -> "தூறல்"
+        "thunderstorm" -> "இடிமின்னல்"
+        "mist", "fog", "haze" -> "பனிமூட்டம்"
+        else -> condition
+    }
+}
+
+private fun translateWeatherDescription(desc: String): String {
+    return when {
+        desc.contains("clear", true) -> "வெயிலுடன் கூடிய வானம்"
+        desc.contains("cloud", true) -> "மிதமான மேகமூட்டம்"
+        desc.contains("rain", true) -> "மழை பொழிவு"
+        desc.contains("drizzle", true) -> "லேசான தூறல்"
+        else -> desc
     }
 }
 

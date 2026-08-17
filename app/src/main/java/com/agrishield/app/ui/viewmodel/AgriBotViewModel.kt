@@ -29,15 +29,15 @@ class AgriBotViewModel(
     val speechResult: StateFlow<String> = speechRecognizer.speechResult
     val rmsDbLevel: StateFlow<Float> = speechRecognizer.rmsDbLevel
 
-    private val _selectedLanguage = MutableStateFlow("ta-IN") // "ta-IN" (Tamil) or "en-IN" (English)
-    val selectedLanguage: StateFlow<String> = _selectedLanguage.asStateFlow()
+    val selectedLanguage: StateFlow<String> = com.agrishield.app.utils.AppLanguageManager.currentLanguage
 
     fun setLanguage(langCode: String) {
-        _selectedLanguage.value = langCode
+        com.agrishield.app.utils.AppLanguageManager.setLanguage(langCode)
     }
 
     fun startVoiceInput() {
-        speechRecognizer.startListening(_selectedLanguage.value)
+        val speechCode = if (com.agrishield.app.utils.AppLanguageManager.isTamil()) "ta-IN" else "en-IN"
+        speechRecognizer.startListening(speechCode)
     }
 
     fun stopVoiceInput() {
@@ -51,10 +51,12 @@ class AgriBotViewModel(
         val crop = user?.primaryCrop ?: "Tomato"
         val diagnosis = diagnosisRepository.latestDiagnosis.value
         val weather = weatherRepository.currentWeather.value
+        val targetLang = com.agrishield.app.utils.AppLanguageManager.currentLanguage.value
 
         viewModelScope.launch {
             agriBotRepository.sendMessage(
                 prompt = text.trim(),
+                targetLanguage = targetLang,
                 currentCrop = crop,
                 recentDiagnosis = diagnosis,
                 currentWeather = weather,

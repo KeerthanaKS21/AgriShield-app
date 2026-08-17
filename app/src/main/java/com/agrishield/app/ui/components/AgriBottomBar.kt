@@ -12,23 +12,28 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.agrishield.app.R
 import com.agrishield.app.ui.navigation.Screen
 import com.agrishield.app.ui.theme.AgriGreenMint
 import com.agrishield.app.ui.theme.AgriGreenPrimary
+import com.agrishield.app.utils.AppLanguageManager
 
 @Composable
 fun AgriBottomBar(
     currentRoute: String,
     onNavigate: (String) -> Unit
 ) {
+    val currentLang by AppLanguageManager.currentLanguage.collectAsState()
+    val isTa = currentLang.startsWith("ta")
+
     val items = listOf(
-        BottomNavItem(Screen.Home.route, R.string.nav_home, Icons.Default.Home),
-        BottomNavItem(Screen.Diagnose.route, R.string.nav_diagnose, Icons.Default.PhotoCamera),
-        BottomNavItem(Screen.AgriBot.route, R.string.nav_agribot, Icons.Default.Chat),
-        BottomNavItem(Screen.WeatherRisk.route, R.string.nav_weather, Icons.Default.Cloud),
-        BottomNavItem(Screen.Profile.route, R.string.nav_profile, Icons.Default.Person)
+        BottomNavItem(Screen.Home.route, if (isTa) "முகப்பு" else "Home", Icons.Default.Home),
+        BottomNavItem(Screen.Diagnose.route, if (isTa) "பயிர் நோய்" else "Diagnose", Icons.Default.PhotoCamera),
+        BottomNavItem(Screen.AgriBot.route, if (isTa) "அக்ரிபாட்" else "AgriBot", Icons.Default.Chat),
+        BottomNavItem(Screen.WeatherRisk.route, if (isTa) "வானிலை" else "Weather", Icons.Default.Cloud),
+        BottomNavItem(Screen.Profile.route, if (isTa) "சுயவிவரம்" else "Profile", Icons.Default.Person)
     )
 
     NavigationBar(
@@ -40,8 +45,8 @@ fun AgriBottomBar(
             NavigationBarItem(
                 selected = selected,
                 onClick = { onNavigate(item.route) },
-                icon = { Icon(item.icon, contentDescription = stringResource(item.titleRes)) },
-                label = { Text(stringResource(item.titleRes)) },
+                icon = { Icon(item.icon, contentDescription = item.title) },
+                label = { Text(item.title) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = AgriGreenPrimary,
                     selectedTextColor = AgriGreenPrimary,
@@ -54,6 +59,6 @@ fun AgriBottomBar(
 
 private data class BottomNavItem(
     val route: String,
-    val titleRes: Int,
+    val title: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 )

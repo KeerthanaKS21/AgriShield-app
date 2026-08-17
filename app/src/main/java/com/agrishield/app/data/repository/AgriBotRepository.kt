@@ -40,11 +40,13 @@ class AgriBotRepository {
 
     suspend fun sendMessage(
         prompt: String,
+        targetLanguage: String = "ta",
         currentCrop: String = "Tomato",
         recentDiagnosis: Diagnosis? = null,
         currentWeather: WeatherData? = null,
         customApiKey: String? = null
     ): Result<String> = withContext(Dispatchers.IO) {
+        val isTargetTamil = targetLanguage.startsWith("ta", ignoreCase = true)
         val userMsg = ChatMessage(
             sender = MessageSender.USER,
             text = prompt,
@@ -69,16 +71,22 @@ class AgriBotRepository {
             if (currentWeather != null) {
                 append("- Live Weather: ${currentWeather.cityName} (${String.format("%.1f", currentWeather.temperatureCelsius)}°C, Humidity: ${currentWeather.humidityPercentage}%, Rain 3h: ${currentWeather.rainMmLast3h}mm, Wind: ${String.format("%.1f", currentWeather.windSpeedKmh)}km/h)\n")
             }
+            append("- REQUIRED OUTPUT LANGUAGE: ${if (isTargetTamil) "TAMIL (தமிழ்)" else "ENGLISH"}\n")
+        }
+
+        val langInstruction = if (isTargetTamil) {
+            "MANDATORY REQUIREMENT: You MUST reply entirely and strictly in practical, fluent TAMIL (தமிழ்), regardless of whether the farmer's question is typed in English or Tamil."
+        } else {
+            "MANDATORY REQUIREMENT: You MUST reply entirely in ENGLISH, regardless of whether the farmer's question is typed in English or Tamil."
         }
 
         val systemInstruction = GeminiSystemInstruction(
             parts = listOf(
                 GeminiPart(
                     text = """
-                        You are AgriBot, an expert agricultural AI assistant and agronomist built for Indian and international farmers.
-                        You support both Tamil (தமிழ்) and English fluently.
-                        If the user asks in Tamil, reply in clear, friendly, and practical Tamil (and vice versa for English).
-                        Provide actionable, scientific, and field-tested farming advice including:
+                        You are AgriBot, an expert agricultural AI assistant and agronomist for farmers.
+                        $langInstruction
+                        Provide actionable, scientific, field-tested farming advice including:
                         1. Organic and chemical treatment dosages (e.g. g/L, kg/acre).
                         2. Cultural preventive practices and irrigation advice considering the farmer's live weather context.
                         3. Simple step-by-step guidance formatted with bullet points.
@@ -120,7 +128,8 @@ class AgriBotRepository {
                 prompt = prompt,
                 currentCrop = currentCrop,
                 recentDiagnosis = recentDiagnosis,
-                currentWeather = currentWeather
+                currentWeather = currentWeather,
+                forceTamil = isTargetTamil
             )
             val botMsg = ChatMessage(
                 sender = MessageSender.AGRIBOT,
@@ -136,7 +145,8 @@ class AgriBotRepository {
                 prompt = prompt,
                 currentCrop = currentCrop,
                 recentDiagnosis = recentDiagnosis,
-                currentWeather = currentWeather
+                currentWeather = currentWeather,
+                forceTamil = isTargetTamil
             )
             val botMsg = ChatMessage(
                 sender = MessageSender.AGRIBOT,
@@ -154,9 +164,10 @@ class AgriBotRepository {
         prompt: String,
         currentCrop: String,
         recentDiagnosis: Diagnosis?,
-        currentWeather: WeatherData?
+        currentWeather: WeatherData?,
+        forceTamil: Boolean = true
     ): String {
-        val isTa = isTamil(prompt)
+        val isTa = forceTamil
         val query = prompt.lowercase()
 
         // 1. Weather precaution & Fertilizer Timing Query

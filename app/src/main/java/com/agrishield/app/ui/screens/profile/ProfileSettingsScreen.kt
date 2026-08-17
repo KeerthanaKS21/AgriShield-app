@@ -64,13 +64,14 @@ fun ProfileSettingsScreen(
 ) {
     val user by viewModel.currentUser.collectAsState()
     val language by viewModel.currentLanguage.collectAsState()
+    val isTa = language.startsWith("ta")
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Farmer Profile & Settings",
+                        text = if (isTa) "விவசாயி சுயவிவரம் & அமைப்புகள்" else "Farmer Profile & Settings",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                     )
                 },
@@ -112,7 +113,7 @@ fun ProfileSettingsScreen(
 
                     Column {
                         Text(
-                            text = user?.displayName ?: "Farmer",
+                            text = user?.displayName ?: if (isTa) "விவசாயி" else "Farmer",
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
                         )
                         Text(
@@ -123,7 +124,10 @@ fun ProfileSettingsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.CloudDone, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "Firebase Authenticated", style = MaterialTheme.typography.labelSmall.copy(color = AgriGreenPrimary))
+                            Text(
+                                text = if (isTa) "ஃபயர்பேஸ் இணைக்கப்பட்டுள்ளது" else "Firebase Authenticated",
+                                style = MaterialTheme.typography.labelSmall.copy(color = AgriGreenPrimary)
+                            )
                         }
                     }
                 }
@@ -132,7 +136,7 @@ fun ProfileSettingsScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             // Language Selection Card
-            SectionHeader(title = "App Language / மொழி")
+            SectionHeader(title = if (isTa) "பயன்பாட்டு மொழி / App Language" else "App Language / பயன்பாட்டு மொழி")
             Spacer(modifier = Modifier.height(10.dp))
 
             Card(
@@ -145,7 +149,6 @@ fun ProfileSettingsScreen(
                     modifier = Modifier.fillMaxWidth().padding(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val isTa = language == "ta"
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = if (isTa) AgriGreenMint else Color(0xFFF5F5F5)),
@@ -157,7 +160,7 @@ fun ProfileSettingsScreen(
                         }
                     }
 
-                    val isEn = language == "en"
+                    val isEn = !isTa
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = if (isEn) AgriGreenMint else Color(0xFFF5F5F5)),
@@ -175,7 +178,7 @@ fun ProfileSettingsScreen(
 
             // ML Model Transparency Button
             AgriOutlinedButton(
-                text = "TensorFlow Lite Model Info & Transparency",
+                text = if (isTa) "டென்சார்ஃப்ளோ லைட் மாதிரி தகவல் & மாதிரி விவரங்கள்" else "TensorFlow Lite Model Info & Transparency",
                 icon = Icons.Default.Shield,
                 onClick = onNavigateToModelInfo
             )
@@ -184,7 +187,7 @@ fun ProfileSettingsScreen(
 
             // Sign Out Button
             AgriOutlinedButton(
-                text = "Log Out from AgriShield",
+                text = if (isTa) "அக்ரிஷீல்டிலிருந்து வெளியேறு" else "Log Out from AgriShield",
                 icon = Icons.Default.Logout,
                 onClick = {
                     viewModel.signOut()

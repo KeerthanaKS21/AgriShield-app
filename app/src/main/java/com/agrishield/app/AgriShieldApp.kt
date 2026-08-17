@@ -18,6 +18,7 @@ import com.agrishield.app.data.repository.TimelineRepository
 import com.agrishield.app.data.repository.WeatherRepository
 import com.agrishield.app.data.speech.AgriSpeechRecognizer
 import com.agrishield.app.utils.AgriNotificationHelper
+import com.agrishield.app.utils.AppLanguageManager
 import com.agrishield.app.utils.LocationHelper
 
 class AgriShieldApp : Application() {
@@ -51,7 +52,8 @@ class AgriShieldApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // 1. Initialize Helpers
+        // 1. Initialize Helpers & Language
+        AppLanguageManager.init(this)
         locationHelper = LocationHelper(this)
         notificationHelper = AgriNotificationHelper(this)
         speechRecognizer = AgriSpeechRecognizer(this)

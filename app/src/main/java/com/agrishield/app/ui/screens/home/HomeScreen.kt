@@ -604,7 +604,7 @@ fun HomeScreen(
             onAddCrop = { name, nameTa, varName, plot, area, sowingDate, stage, locName, lat, lon ->
                 viewModel.addNewCrop(name, nameTa, varName, plot, area, sowingDate, stage, locName, lat, lon)
             },
-            onFetchGpsLocation = { viewModel.getCurrentGpsLocation() }
+            onFetchGpsLocation = { viewModel.getCurrentGpsLocationWithPlace() }
         )
     }
 }

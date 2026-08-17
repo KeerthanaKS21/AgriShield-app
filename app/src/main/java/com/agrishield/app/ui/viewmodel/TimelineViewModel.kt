@@ -72,6 +72,10 @@ class TimelineViewModel(
         return locationHelper?.getCurrentLocation()
     }
 
+    suspend fun getCurrentGpsLocationWithPlace(): Pair<Location, String>? {
+        return locationHelper?.getCurrentGpsLocationWithPlace()
+    }
+
     fun toggleTask(taskId: String) {
         val user = authRepository.currentUser.value
         val userId = user?.uid ?: "local_user"

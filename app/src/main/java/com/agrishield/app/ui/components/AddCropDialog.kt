@@ -77,7 +77,7 @@ fun AddCropBottomSheet(
         latitude: Double?,
         longitude: Double?
     ) -> Unit,
-    onFetchGpsLocation: suspend () -> android.location.Location?
+    onFetchGpsLocation: suspend () -> Pair<android.location.Location, String>?
 ) {
     val isTamil = AppLanguageManager.isTamil()
     val scope = rememberCoroutineScope()
@@ -316,10 +316,14 @@ fun AddCropBottomSheet(
                     .clickable {
                         scope.launch {
                             isFetchingGps = true
-                            val loc = onFetchGpsLocation()
-                            if (loc != null) {
+                            val result = onFetchGpsLocation()
+                            if (result != null) {
+                                val (loc, place) = result
                                 latitude = loc.latitude
                                 longitude = loc.longitude
+                                if (place.isNotBlank()) {
+                                    locationName = place
+                                }
                                 gpsCaptured = true
                             }
                             isFetchingGps = false

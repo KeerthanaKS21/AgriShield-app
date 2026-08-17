@@ -141,4 +141,8 @@ class HomeViewModel(
     suspend fun getCurrentGpsLocation(): Location? {
         return locationHelper.getCurrentLocation()
     }
+
+    suspend fun getCurrentGpsLocationWithPlace(): Pair<Location, String>? {
+        return locationHelper.getCurrentGpsLocationWithPlace()
+    }
 }

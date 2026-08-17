@@ -18,22 +18,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -41,9 +35,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -73,12 +64,6 @@ fun ProfileSettingsScreen(
 ) {
     val user by viewModel.currentUser.collectAsState()
     val language by viewModel.currentLanguage.collectAsState()
-    val customGemini by viewModel.customGeminiKey.collectAsState()
-    val customWeather by viewModel.customWeatherKey.collectAsState()
-
-    var geminiInput by remember { mutableStateOf(customGemini) }
-    var weatherInput by remember { mutableStateOf(customWeather) }
-    var keysSaved by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -186,65 +171,7 @@ fun ProfileSettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // API Keys Configuration Card (Direct in-app custom keys for seamless evaluation)
-            SectionHeader(title = "API Configuration (Security & Tests)")
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Text(
-                        text = "Custom API Keys",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Text(
-                        text = "Keys configured here override BuildConfig keys without requiring project recompilation.",
-                        style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
-                    )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    OutlinedTextField(
-                        value = geminiInput,
-                        onValueChange = { geminiInput = it; keysSaved = false },
-                        label = { Text("Gemini API Key (AI Assistant)") },
-                        leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AgriGreenPrimary)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = weatherInput,
-                        onValueChange = { weatherInput = it; keysSaved = false },
-                        label = { Text("OpenWeatherMap API Key") },
-                        leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AgriGreenPrimary)
-                    )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    AgriPrimaryButton(
-                        text = if (keysSaved) "Keys Saved Successfully" else "Save Custom Keys",
-                        icon = if (keysSaved) Icons.Default.CheckCircle else Icons.Default.Save,
-                        onClick = {
-                            viewModel.saveApiKeys(geminiInput, weatherInput)
-                            keysSaved = true
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // ML Model Transparency Button
             AgriOutlinedButton(

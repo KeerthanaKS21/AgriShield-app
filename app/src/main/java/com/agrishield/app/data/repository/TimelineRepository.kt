@@ -3,6 +3,7 @@ package com.agrishield.app.data.repository
 import com.agrishield.app.data.firebase.FirestoreManager
 import com.agrishield.app.data.model.CareTask
 import com.agrishield.app.data.model.CropTimeline
+import com.agrishield.app.data.model.CropTimelineTemplates
 import com.agrishield.app.data.model.GrowthStage
 import com.agrishield.app.data.model.TaskCategory
 import kotlinx.coroutines.Dispatchers
@@ -14,19 +15,78 @@ import kotlinx.coroutines.withContext
 class TimelineRepository(
     private val firestoreManager: FirestoreManager
 ) {
-    private val _timeline = MutableStateFlow(
-        CropTimeline(
-            id = "default_crop",
-            cropName = "Tomato",
-            variety = "PKM-1 Hybrid",
-            currentStage = GrowthStage.VEGETATIVE,
-            tasks = getDefaultTasks()
-        )
+    private val defaultInitialCrop = CropTimeline(
+        id = "crop_tomato_1",
+        cropName = "Tomato",
+        cropNameTa = "தக்காளி",
+        variety = "PKM-1 Hybrid",
+        fieldPlotName = "North Field (Plot A)",
+        areaAcres = 2.0,
+        sowingDateEpoch = System.currentTimeMillis() - (25L * 24 * 60 * 60 * 1000),
+        currentStage = GrowthStage.VEGETATIVE,
+        locationName = "Coimbatore South",
+        latitude = 11.0168,
+        longitude = 76.9558,
+        tasks = CropTimelineTemplates.generateDefaultTasksForCrop("Tomato", System.currentTimeMillis() - (25L * 24 * 60 * 60 * 1000))
     )
+
+    private val defaultPaddyCrop = CropTimeline(
+        id = "crop_paddy_2",
+        cropName = "Rice / Paddy",
+        cropNameTa = "நெல் (சம்பா)",
+        variety = "CO-51 High Yield",
+        fieldPlotName = "Wetland Plot 2",
+        areaAcres = 3.5,
+        sowingDateEpoch = System.currentTimeMillis() - (15L * 24 * 60 * 60 * 1000),
+        currentStage = GrowthStage.SEEDLING,
+        locationName = "Thanjavur Delta",
+        latitude = 10.7870,
+        longitude = 79.1378,
+        tasks = CropTimelineTemplates.generateDefaultTasksForCrop("Rice", System.currentTimeMillis() - (15L * 24 * 60 * 60 * 1000))
+    )
+
+    private val _crops = MutableStateFlow<List<CropTimeline>>(listOf(defaultInitialCrop, defaultPaddyCrop))
+    val crops: StateFlow<List<CropTimeline>> = _crops.asStateFlow()
+
+    private val _selectedCropId = MutableStateFlow(defaultInitialCrop.id)
+    val selectedCropId: StateFlow<String> = _selectedCropId.asStateFlow()
+
+    private val _timeline = MutableStateFlow(defaultInitialCrop)
     val timeline: StateFlow<CropTimeline> = _timeline.asStateFlow()
 
+    fun selectCrop(cropId: String) {
+        _selectedCropId.value = cropId
+        val found = _crops.value.firstOrNull { it.id == cropId } ?: _crops.value.firstOrNull()
+        if (found != null) {
+            _timeline.value = found
+        }
+    }
+
+    suspend fun addCrop(userId: String, newCrop: CropTimeline): Result<CropTimeline> = withContext(Dispatchers.IO) {
+        val tasks = if (newCrop.tasks.isEmpty()) {
+            CropTimelineTemplates.generateDefaultTasksForCrop(newCrop.cropName, newCrop.sowingDateEpoch)
+        } else {
+            newCrop.tasks
+        }
+        val completeCrop = newCrop.copy(tasks = tasks)
+        val updatedList = _crops.value + completeCrop
+        _crops.value = updatedList
+        selectCrop(completeCrop.id)
+        Result.success(completeCrop)
+    }
+
+    suspend fun deleteCrop(userId: String, cropId: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val updatedList = _crops.value.filterNot { it.id == cropId }
+        if (updatedList.isNotEmpty()) {
+            _crops.value = updatedList
+            selectCrop(updatedList.first().id)
+        }
+        Result.success(Unit)
+    }
+
     suspend fun toggleTaskCompletion(userId: String, taskId: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val currentTasks = _timeline.value.tasks.map { task ->
+        val currentCrop = _timeline.value
+        val updatedTasks = currentCrop.tasks.map { task ->
             if (task.id == taskId) {
                 val newStatus = !task.isCompleted
                 task.copy(
@@ -35,8 +95,12 @@ class TimelineRepository(
                 )
             } else task
         }
-        _timeline.value = _timeline.value.copy(tasks = currentTasks)
-        val updatedTask = currentTasks.firstOrNull { it.id == taskId }
+        val updatedCrop = currentCrop.copy(tasks = updatedTasks)
+        _timeline.value = updatedCrop
+
+        _crops.value = _crops.value.map { if (it.id == updatedCrop.id) updatedCrop else it }
+
+        val updatedTask = updatedTasks.firstOrNull { it.id == taskId }
         if (updatedTask != null) {
             firestoreManager.saveCareTask(userId, updatedTask)
         }
@@ -44,61 +108,19 @@ class TimelineRepository(
     }
 
     suspend fun addTask(userId: String, task: CareTask): Result<Unit> = withContext(Dispatchers.IO) {
-        val updatedList = _timeline.value.tasks + task
-        _timeline.value = _timeline.value.copy(tasks = updatedList)
+        val currentCrop = _timeline.value
+        val updatedTasks = currentCrop.tasks + task
+        val updatedCrop = currentCrop.copy(tasks = updatedTasks)
+        _timeline.value = updatedCrop
+        _crops.value = _crops.value.map { if (it.id == updatedCrop.id) updatedCrop else it }
+
         firestoreManager.saveCareTask(userId, task)
     }
 
     suspend fun updateCropStage(newStage: GrowthStage) {
-        _timeline.value = _timeline.value.copy(currentStage = newStage)
-    }
-
-    private fun getDefaultTasks(): List<CareTask> {
-        val now = System.currentTimeMillis()
-        val dayMs = 24L * 60 * 60 * 1000
-        return listOf(
-            CareTask(
-                id = "task_1",
-                title = "Apply Basal Fertilizer (DAP + FYM)",
-                titleTa = "அடி உரம் இடுதல் (டி.ஏ.பி + தொழுவுரம்)",
-                category = TaskCategory.FERTILIZATION,
-                dueDateEpoch = now - (20 * dayMs),
-                isCompleted = true,
-                completedAt = now - (20 * dayMs)
-            ),
-            CareTask(
-                id = "task_2",
-                title = "First Weeding & Earthing Up",
-                titleTa = "முதல் களை எடுத்தல் மற்றும் மண் அணைத்தல்",
-                category = TaskCategory.WEEDING,
-                dueDateEpoch = now - (5 * dayMs),
-                isCompleted = true,
-                completedAt = now - (5 * dayMs)
-            ),
-            CareTask(
-                id = "task_3",
-                title = "Preventive Spray: Neem Oil 3ml/L",
-                titleTa = "முன்னெச்சரிக்கை தெளிப்பு: வேப்பெண்ணெய் 3 மி.லி/லி",
-                category = TaskCategory.PEST_INSPECTION,
-                dueDateEpoch = now + (2 * dayMs),
-                isCompleted = false
-            ),
-            CareTask(
-                id = "task_4",
-                title = "Flowering Top-Dressing: MOP (15 kg/acre)",
-                titleTa = "பூக்கும் பருவம் மேலுரம்: பொட்டாஷ் (15 கிலோ/ஏக்கர்)",
-                category = TaskCategory.FERTILIZATION,
-                dueDateEpoch = now + (10 * dayMs),
-                isCompleted = false
-            ),
-            CareTask(
-                id = "task_5",
-                title = "Drip Line Flush & Soil Moisture Inspection",
-                titleTa = "சொட்டுநீர் குழாய் சுத்தம் செய்தல் & ஈரப்பதம் சரிபார்த்தல்",
-                category = TaskCategory.IRRIGATION,
-                dueDateEpoch = now + (15 * dayMs),
-                isCompleted = false
-            )
-        )
+        val currentCrop = _timeline.value
+        val updatedCrop = currentCrop.copy(currentStage = newStage)
+        _timeline.value = updatedCrop
+        _crops.value = _crops.value.map { if (it.id == updatedCrop.id) updatedCrop else it }
     }
 }

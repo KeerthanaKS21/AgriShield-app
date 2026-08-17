@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,34 +14,47 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,7 +64,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.agrishield.app.data.model.ConfidenceLevel
+import com.agrishield.app.data.model.CropTimeline
+import com.agrishield.app.data.model.GrowthStage
 import com.agrishield.app.data.model.RiskLevel
+import com.agrishield.app.ui.components.AddCropBottomSheet
 import com.agrishield.app.ui.components.HealthScoreGauge
 import com.agrishield.app.ui.components.RiskBadge
 import com.agrishield.app.ui.components.SectionHeader
@@ -78,9 +95,13 @@ fun HomeScreen(
     val diagnosis by viewModel.latestDiagnosis.collectAsState()
     val health by viewModel.farmHealth.collectAsState()
     val risk by viewModel.currentRisk.collectAsState()
+    val farmCrops by viewModel.farmCrops.collectAsState()
+    val activeCrop by viewModel.activeCrop.collectAsState()
+    val selectedCropId by viewModel.selectedCropId.collectAsState()
     val currentLang by AppLanguageManager.currentLanguage.collectAsState()
 
     val isTamil = currentLang.startsWith("ta")
+    var showAddCropSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -92,7 +113,7 @@ fun HomeScreen(
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
                         Text(
-                            text = "${user?.location ?: if (isTamil) "தமிழ்நாடு" else "Tamil Nadu"} • ${if (isTamil && user?.primaryCrop == "Tomato") "தக்காளி" else (user?.primaryCrop ?: "Tomato")}",
+                            text = "${activeCrop.locationName} • ${if (isTamil) activeCrop.cropNameTa else activeCrop.cropName} (${activeCrop.fieldPlotName})",
                             style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
                         )
                     }
@@ -141,7 +162,7 @@ fun HomeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            // 1. Live Weather Card
+            // 1. Live Weather Card for Active Crop
             WeatherCard(
                 weather = weather,
                 isTamil = isTamil,
@@ -150,7 +171,71 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 2. Farm Health Score & Risk Overview Card
+            // 2. Farm Crops & Timeline Carousel Section
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SectionHeader(title = if (isTamil) "என் பயிர்கள் & GPS (${farmCrops.size})" else "My Farm Crops & GPS (${farmCrops.size})")
+                TextButton(onClick = { onNavigate(Screen.Timeline.route) }) {
+                    Text(
+                        text = if (isTamil) "காலவரிசை காண்க →" else "Timeline →",
+                        color = AgriGreenPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(vertical = 4.dp)
+            ) {
+                items(farmCrops) { crop ->
+                    val isSelected = crop.id == selectedCropId
+                    CropSummaryCard(
+                        crop = crop,
+                        isSelected = isSelected,
+                        isTamil = isTamil,
+                        onClick = { viewModel.selectActiveCrop(crop.id) }
+                    )
+                }
+
+                item {
+                    // Add Crop Card
+                    Card(
+                        modifier = Modifier
+                            .width(130.dp)
+                            .height(115.dp)
+                            .clickable { showAddCropSheet = true },
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, AgriGreenMint)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(28.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = if (isTamil) "+ பயிர் சேர்" else "+ Add Crop",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, color = AgriGreenPrimary)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // 3. Farm Health Score & Risk Overview Card for Active Crop
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -166,7 +251,7 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (isTamil) "பண்ணை ஆரோக்கியம்" else "Farm Health Score",
+                                text = "${if (isTamil) activeCrop.cropNameTa else activeCrop.cropName} • ${if (isTamil) "ஆரோக்கிய நிலை" else "Health Score"}",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -218,7 +303,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 3. Quick Actions Grid
+            // 4. Quick Actions Grid
             SectionHeader(title = if (isTamil) "விரைவு சேவைகள்" else "Quick Services")
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -228,6 +313,16 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 QuickActionPill(
+                    title = if (isTamil) "பயிர் காலவரிசை" else "Crop Timeline",
+                    subtitle = if (isTamil) "பராமரிப்பு அட்டவணை" else "${activeCrop.tasks.count { !it.isCompleted }} Tasks Due",
+                    icon = Icons.Default.Timeline,
+                    iconBg = Color(0xFFE8F5E9),
+                    iconTint = AgriGreenPrimary,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onNavigate(Screen.Timeline.route) }
+                )
+
+                QuickActionPill(
                     title = if (isTamil) "இலை ஸ்கேன்" else "Diagnose Leaf",
                     subtitle = if (isTamil) "AI கண்டறிதல்" else "TFLite AI",
                     icon = Icons.Default.PhotoCamera,
@@ -235,16 +330,6 @@ fun HomeScreen(
                     iconTint = AgriGreenPrimary,
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigate(Screen.Diagnose.route) }
-                )
-
-                QuickActionPill(
-                    title = if (isTamil) "அக்ரிபாட்" else "AgriBot AI",
-                    subtitle = if (isTamil) "ஜெமினி ஆலோசனை" else "Tamil/English",
-                    icon = Icons.Default.Chat,
-                    iconBg = Color(0xFFFFF8E1),
-                    iconTint = AgriGoldAmber,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onNavigate(Screen.AgriBot.route) }
                 )
             }
 
@@ -255,6 +340,16 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 QuickActionPill(
+                    title = if (isTamil) "அக்ரிபாட் AI" else "AgriBot AI",
+                    subtitle = if (isTamil) "விவசாய ஆலோசனை" else "Tamil/English",
+                    icon = Icons.Default.Chat,
+                    iconBg = Color(0xFFFFF8E1),
+                    iconTint = AgriGoldAmber,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onNavigate(Screen.AgriBot.route) }
+                )
+
+                QuickActionPill(
                     title = if (isTamil) "வானிலை & அபாயம்" else "Weather & Risk",
                     subtitle = if (isTamil) "முன்னறிவிப்பு" else "Forecast + Radar",
                     icon = Icons.Default.Cloud,
@@ -263,21 +358,11 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f),
                     onClick = { onNavigate(Screen.WeatherRisk.route) }
                 )
-
-                QuickActionPill(
-                    title = if (isTamil) "மண் வளம்" else "Soil Health",
-                    subtitle = if (isTamil) "NPK & pH" else "Nutrient Test",
-                    icon = Icons.Default.Eco,
-                    iconBg = Color(0xFFE8F5E9),
-                    iconTint = AgriGreenPrimary,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onNavigate(Screen.SoilHealth.route) }
-                )
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 4. Recent Diagnosis Snapshot
+            // 5. Recent Diagnosis Snapshot
             SectionHeader(
                 title = if (isTamil) "சமீபத்திய பயிர் நோயறிதல்" else "Recent Crop Diagnosis",
                 actionText = if (isTamil) "மாதிரி தகவல்" else "Model Specs",
@@ -349,6 +434,86 @@ fun HomeScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+
+    if (showAddCropSheet) {
+        AddCropBottomSheet(
+            onDismiss = { showAddCropSheet = false },
+            onAddCrop = { name, nameTa, varName, plot, area, sowingDate, stage, locName, lat, lon ->
+                viewModel.addNewCrop(name, nameTa, varName, plot, area, sowingDate, stage, locName, lat, lon)
+            },
+            onFetchGpsLocation = { viewModel.getCurrentGpsLocation() }
+        )
+    }
+}
+
+@Composable
+private fun CropSummaryCard(
+    crop: CropTimeline,
+    isSelected: Boolean,
+    isTamil: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .width(170.dp)
+            .height(115.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isSelected) AgriGreenMint else Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, if (isSelected) AgriGreenPrimary else BorderLight),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 3.dp else 1.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = if (isTamil) crop.cropNameTa else crop.cropName,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) AgriGreenPrimary else TextPrimary
+                    ),
+                    maxLines = 1
+                )
+                if (isSelected) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(16.dp))
+                }
+            }
+
+            Text(
+                text = "${crop.fieldPlotName} • ${crop.areaAcres} ${if (isTamil) "ஏக்கர்" else "Acres"}",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = TextSecondary),
+                maxLines = 1
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(12.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = crop.locationName,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, color = TextSecondary),
+                        maxLines = 1
+                    )
+                }
+
+                if (crop.latitude != null) {
+                    Icon(Icons.Default.GpsFixed, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(12.dp))
+                }
+            }
         }
     }
 }

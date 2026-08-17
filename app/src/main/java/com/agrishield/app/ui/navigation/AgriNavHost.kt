@@ -73,7 +73,7 @@ fun AgriNavHost(
         app.locationHelper
     )
     val soilViewModel = SoilViewModel(app.soilRepository, app.authRepository)
-    val timelineViewModel = TimelineViewModel(app.timelineRepository, app.authRepository)
+    val timelineViewModel = TimelineViewModel(app.timelineRepository, app.authRepository, app.locationHelper)
     val settingsViewModel = SettingsViewModel(app, app.authRepository)
 
     Scaffold(

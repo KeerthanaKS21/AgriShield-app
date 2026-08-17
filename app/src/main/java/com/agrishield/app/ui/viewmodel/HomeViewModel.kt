@@ -36,6 +36,7 @@ class HomeViewModel(
     val latestDiagnosis: StateFlow<Diagnosis?> = diagnosisRepository.latestDiagnosis
     val farmHealth: StateFlow<FarmHealth> = farmHealthRepository.farmHealth
     val currentRisk: StateFlow<CropRisk> = farmHealthRepository.currentRisk
+    val currentIrrigation: StateFlow<com.agrishield.app.data.model.IrrigationAdvice?> = farmHealthRepository.currentIrrigation
 
     val farmCrops: StateFlow<List<CropTimeline>> = timelineRepository.crops
     val activeCrop: StateFlow<CropTimeline> = timelineRepository.timeline
@@ -72,6 +73,7 @@ class HomeViewModel(
             farmHealthRepository.updateMetrics(
                 recentDiagnosis = latestDiagnosis.value,
                 weather = currentWeather.value,
+                forecast = weatherRepository.forecast.value,
                 soilData = soilRepository.latestSoil.value,
                 careTasks = active.tasks,
                 primaryCrop = active.cropName
@@ -88,6 +90,7 @@ class HomeViewModel(
             farmHealthRepository.updateMetrics(
                 recentDiagnosis = latestDiagnosis.value,
                 weather = currentWeather.value,
+                forecast = weatherRepository.forecast.value,
                 soilData = soilRepository.latestSoil.value,
                 careTasks = crop.tasks,
                 primaryCrop = crop.cropName

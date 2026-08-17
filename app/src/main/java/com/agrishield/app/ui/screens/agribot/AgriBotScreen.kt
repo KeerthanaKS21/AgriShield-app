@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,12 +30,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -78,6 +81,7 @@ import com.agrishield.app.ui.theme.BorderLight
 import com.agrishield.app.ui.theme.TextPrimary
 import com.agrishield.app.ui.theme.TextSecondary
 import com.agrishield.app.ui.viewmodel.AgriBotViewModel
+import com.agrishield.app.utils.AppLanguageManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -119,6 +123,8 @@ fun AgriBotScreen(
         }
     }
 
+    val isTa = selectedLanguage.startsWith("ta")
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -134,74 +140,204 @@ fun AgriBotScreen(
                             }
                         }
                         Spacer(modifier = Modifier.width(10.dp))
-                    val isTa = selectedLanguage.startsWith("ta")
-                    Column {
-                        Text(
-                            text = if (isTa) "அக்ரிபாட் AI" else "AgriBot AI",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Text(
-                            text = if (isTa) "தமிழ் உரையாடல் செயலில் உள்ளது" else "English Conversation Active",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = AgriGreenPrimary)
-                        )
+                        Column {
+                            Text(
+                                text = if (isTa) "அக்ரிபாட் AI" else "AgriBot AI",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = if (isTa) "தமிழ் உரையாடல் செயலில் உள்ளது" else "English Conversation Active",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = AgriGreenPrimary)
+                            )
+                        }
                     }
-                }
-            },
-            actions = {
-                // Language Switcher Chip
-                val isTa = selectedLanguage.startsWith("ta")
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = AgriGreenMint),
-                    modifier = Modifier.clickable {
-                        val nextLang = if (isTa) "en" else "ta"
-                        viewModel.setLanguage(nextLang)
+                },
+                actions = {
+                    // Language Switcher Chip
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = AgriGreenMint),
+                        modifier = Modifier.clickable {
+                            val nextLang = if (isTa) "en" else "ta"
+                            viewModel.setLanguage(nextLang)
+                            AppLanguageManager.setLanguage(nextLang)
+                        }
+                    ) {
+                        Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Language, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (isTa) "தமிழ்" else "EN",
+                                color = AgriGreenPrimary,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
                     }
-                ) {
-                    Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Language, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (isTa) "தமிழ்" else "EN",
-                            color = AgriGreenPrimary,
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
-                        )
+
+                    IconButton(onClick = { viewModel.clearHistory() }) {
+                        Icon(Icons.Default.Delete, contentDescription = "Clear Chat", tint = TextSecondary)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        },
+        bottomBar = {
+            // Input Bar placed in Scaffold bottomBar with imePadding & navigationBarsPadding
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .navigationBarsPadding()
+                    .imePadding()
+            ) {
+                // Voice Listening Wave Indicator
+                if (isListening) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Mic, contentDescription = null, tint = AgriRedAlert, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isTa) "கேட்கிறது... பேசவும்" else "Listening... Speak your farm question",
+                                    color = AgriRedAlert,
+                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
+                            VoiceWaveVisualizer(isListening = true)
+                        }
                     }
                 }
 
-                IconButton(onClick = { viewModel.clearHistory() }) {
-                    Icon(Icons.Default.Delete, contentDescription = "Clear Chat", tint = TextSecondary)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8F3)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Mic Button
+                        IconButton(
+                            onClick = {
+                                if (isListening) {
+                                    viewModel.stopVoiceInput()
+                                } else {
+                                    val hasPermission = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.RECORD_AUDIO
+                                    ) == PackageManager.PERMISSION_GRANTED
+
+                                    if (hasPermission) {
+                                        viewModel.startVoiceInput()
+                                    } else {
+                                        micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
+                                contentDescription = "Voice Input",
+                                tint = if (isListening) AgriRedAlert else AgriGreenPrimary
+                            )
+                        }
+
+                        OutlinedTextField(
+                            value = inputText,
+                            onValueChange = { inputText = it },
+                            placeholder = {
+                                Text(
+                                    text = if (isTa) "தமிழில் அல்லது Englishல் கேளுங்கள்..." else "Ask about disease, spray, irrigation...",
+                                    fontSize = 13.sp,
+                                    color = TextSecondary
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(onSend = {
+                                if (inputText.isNotBlank()) {
+                                    viewModel.sendMessage(inputText)
+                                    inputText = ""
+                                }
+                            }),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            )
+                        )
+
+                        IconButton(
+                            onClick = {
+                                if (inputText.isNotBlank()) {
+                                    viewModel.sendMessage(inputText)
+                                    inputText = ""
+                                }
+                            },
+                            enabled = inputText.isNotBlank() && !isLoading
+                        ) {
+                            Card(
+                                shape = CircleShape,
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (inputText.isNotBlank()) AgriGreenPrimary else Color(0xFFE0E0E0)
+                                ),
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "Send",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-        )
-    },
-    containerColor = Color(0xFFF7FAF8)
-) { padding ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-    ) {
-        val isTa = selectedLanguage.startsWith("ta")
-        // Quick Prompt Chips Carousel
-        val sampleChips = if (isTa) {
-            listOf(
-                "தக்காளி இலைகளில் கருப்பு புள்ளிகள்",
-                "நெல் இலைகள் மஞ்சளாக மாறுகின்றன",
-                "மழை வரப்போகிறது, உரம் இடலாமா?",
-                "இன்றைய பாசன அளவு என்ன?",
-                "வளர்ச்சி பருவத்திற்கான சிறந்த இயற்கை உரம்"
-            )
-        } else {
-            listOf(
-                "Black spots on tomato leaves",
-                "My rice leaves are turning yellow",
-                "Rain forecast: should I apply fertilizer?",
-                "What is today's irrigation schedule?",
-                "Best organic fertilizer for growth stage"
-            )
-        }
+            }
+        },
+        containerColor = Color(0xFFF7FAF8)
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Quick Prompt Chips Carousel
+            val sampleChips = if (isTa) {
+                listOf(
+                    "தக்காளி இலைகளில் கருப்பு புள்ளிகள்",
+                    "நெல் இலைகள் மஞ்சளாக மாறுகின்றன",
+                    "மழை வரப்போகிறது, உரம் இடலாமா?",
+                    "இன்றைய பாசன அளவு என்ன?",
+                    "வளர்ச்சி பருவத்திற்கான சிறந்த இயற்கை உரம்"
+                )
+            } else {
+                listOf(
+                    "Black spots on tomato leaves",
+                    "My rice leaves are turning yellow",
+                    "Rain forecast: should I apply fertilizer?",
+                    "What is today's irrigation schedule?",
+                    "Best organic fertilizer for growth stage"
+                )
+            }
 
             LazyRow(
                 modifier = Modifier
@@ -230,44 +366,14 @@ fun AgriBotScreen(
                 }
             }
 
-            // Chat Messages List
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(messages) { msg ->
-                    ChatBubble(message = msg)
-                }
-
-                if (isLoading) {
-                    item {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White)
-                                .padding(12.dp)
-                        ) {
-                            CircularProgressIndicator(color = AgriGreenPrimary, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "AgriBot is analyzing farming parameters...",
-                                style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
-                            )
-                        }
-                    }
-                }
-            }
-
+            // Error message banner if any
             if (errorMessage != null) {
                 Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
                 ) {
                     Text(
                         text = errorMessage!!,
@@ -278,123 +384,36 @@ fun AgriBotScreen(
                 }
             }
 
-            // Live Voice Listening Indicator Card
-            if (isListening) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = AgriGreenMint)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Mic, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (selectedLanguage == "ta-IN") "பேசுங்கள்... தமிழில் கேட்கிறது" else "Listening... speak in English",
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, color = AgriGreenDark)
-                            )
-                        }
-                        VoiceWaveVisualizer(isListening = true)
-                    }
-                }
-            }
-
-            // Input Bar
-            Card(
+            // Message List
+            LazyColumn(
+                state = listState,
                 modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .padding(12.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Voice Mic Button
-                    IconButton(
-                        onClick = {
-                            if (isListening) {
-                                viewModel.stopVoiceInput()
-                            } else {
-                                val hasPerm = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.RECORD_AUDIO
-                                ) == PackageManager.PERMISSION_GRANTED
+                items(messages) { message ->
+                    ChatBubble(message = message)
+                }
 
-                                if (hasPerm) {
-                                    viewModel.startVoiceInput()
-                                } else {
-                                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                }
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
-                            contentDescription = "Voice Input",
-                            tint = if (isListening) AgriRedAlert else AgriGreenPrimary
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        placeholder = {
-                            Text(
-                                text = if (selectedLanguage == "ta-IN") "தமிழில் கேளுங்கள்..." else "Ask AgriBot in English...",
-                                fontSize = 14.sp
-                            )
-                        },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                        keyboardActions = KeyboardActions(onSend = {
-                            if (inputText.isNotBlank()) {
-                                viewModel.sendMessage(inputText)
-                                inputText = ""
-                            }
-                        }),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent
-                        )
-                    )
-
-                    IconButton(
-                        onClick = {
-                            if (inputText.isNotBlank()) {
-                                viewModel.sendMessage(inputText)
-                                inputText = ""
-                            }
-                        },
-                        enabled = inputText.isNotBlank() && !isLoading
-                    ) {
-                        Card(
-                            shape = CircleShape,
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (inputText.isNotBlank()) AgriGreenPrimary else Color(0xFFE0E0E0)
-                            ),
-                            modifier = Modifier.size(36.dp)
+                if (isLoading) {
+                    item {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 8.dp)
                         ) {
-                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                Icon(
-                                    Icons.Default.Send,
-                                    contentDescription = "Send",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            CircularProgressIndicator(
+                                color = AgriGreenPrimary,
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = if (isTa) "அக்ரிபாட் பதிலளிக்கிறது..." else "AgriBot is analyzing...",
+                                style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
+                            )
                         }
                     }
                 }

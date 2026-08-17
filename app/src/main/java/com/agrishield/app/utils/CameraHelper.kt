@@ -4,9 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import androidx.core.content.FileProvider
-import android.media.ExifInterface
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -18,13 +18,15 @@ object CameraHelper {
 
     fun createTempImageUri(context: Context): Uri {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val storageDir = context.cacheDir
-        val file = File.createTempFile("CROP_LEAF_${timeStamp}_", ".jpg", storageDir)
-        return FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+        val imagesDir = File(context.cacheDir, "images").apply {
+            if (!exists()) mkdirs()
+        }
+        val file = File(imagesDir, "CROP_LEAF_${timeStamp}.jpg")
+        if (!file.exists()) {
+            file.createNewFile()
+        }
+        val authority = "${context.packageName}.fileprovider"
+        return FileProvider.getUriForFile(context, authority, file)
     }
 
     fun loadAndCorrectBitmap(context: Context, imageUri: Uri): Bitmap? {
@@ -35,20 +37,24 @@ object CameraHelper {
 
             if (originalBitmap == null) return null
 
-            // Check EXIF orientation
-            inputStream = context.contentResolver.openInputStream(imageUri)
-            val exif = inputStream?.let { ExifInterface(it) }
-            val orientation = exif?.getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_NORMAL
-            ) ?: ExifInterface.ORIENTATION_NORMAL
-            inputStream?.close()
+            // Check EXIF orientation safely
+            val rotationDegrees = try {
+                inputStream = context.contentResolver.openInputStream(imageUri)
+                val exif = inputStream?.let { ExifInterface(it) }
+                val orientation = exif?.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                ) ?: ExifInterface.ORIENTATION_NORMAL
+                inputStream?.close()
 
-            val rotationDegrees = when (orientation) {
-                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
-                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
-                else -> 0f
+                when (orientation) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                    ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                    else -> 0f
+                }
+            } catch (e: Exception) {
+                0f
             }
 
             if (rotationDegrees != 0f) {
@@ -72,7 +78,10 @@ object CameraHelper {
     }
 
     fun saveBitmapToCache(context: Context, bitmap: Bitmap): String {
-        val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
+        val imagesDir = File(context.cacheDir, "images").apply {
+            if (!exists()) mkdirs()
+        }
+        val file = File(imagesDir, "scan_${System.currentTimeMillis()}.jpg")
         FileOutputStream(file).use { out ->
             bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
         }

@@ -1,9 +1,12 @@
 package com.agrishield.app.ui.screens.diagnose
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -100,6 +103,21 @@ fun DiagnoseScreen(
             if (correctedBitmap != null) {
                 val cachedPath = CameraHelper.saveBitmapToCache(context, correctedBitmap)
                 viewModel.setImage(correctedBitmap, tempCameraUri)
+            }
+        }
+    }
+
+    // Camera Permission Launcher
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            try {
+                val uri = CameraHelper.createTempImageUri(context)
+                tempCameraUri = uri
+                cameraLauncher.launch(uri)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -221,9 +239,22 @@ fun DiagnoseScreen(
                     icon = Icons.Default.PhotoCamera,
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        val uri = CameraHelper.createTempImageUri(context)
-                        tempCameraUri = uri
-                        cameraLauncher.launch(uri)
+                        val hasPermission = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (hasPermission) {
+                            try {
+                                val uri = CameraHelper.createTempImageUri(context)
+                                tempCameraUri = uri
+                                cameraLauncher.launch(uri)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        } else {
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     }
                 )
 

@@ -21,26 +21,27 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.GpsFixed
-import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import com.agrishield.app.data.model.ConfidenceLevel
 import com.agrishield.app.data.model.CropTimeline
 import com.agrishield.app.data.model.GrowthStage
+import com.agrishield.app.data.model.IrrigationAction
 import com.agrishield.app.data.model.RiskLevel
 import com.agrishield.app.ui.components.AddCropBottomSheet
 import com.agrishield.app.ui.components.HealthScoreGauge
@@ -95,6 +97,7 @@ fun HomeScreen(
     val diagnosis by viewModel.latestDiagnosis.collectAsState()
     val health by viewModel.farmHealth.collectAsState()
     val risk by viewModel.currentRisk.collectAsState()
+    val irrigation by viewModel.currentIrrigation.collectAsState()
     val farmCrops by viewModel.farmCrops.collectAsState()
     val activeCrop by viewModel.activeCrop.collectAsState()
     val selectedCropId by viewModel.selectedCropId.collectAsState()
@@ -160,7 +163,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
             // 1. Live Weather Card for Active Crop
             WeatherCard(
@@ -169,18 +172,18 @@ fun HomeScreen(
                 modifier = Modifier.clickable { onNavigate(Screen.WeatherRisk.route) }
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // 2. Farm Crops & Timeline Carousel Section
+            // 2. Farm Crops & GPS Carousel Section
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                SectionHeader(title = if (isTamil) "என் பயிர்கள் & GPS (${farmCrops.size})" else "My Farm Crops & GPS (${farmCrops.size})")
+                SectionHeader(title = if (isTamil) "என் பயிர்கள் & GPS (${farmCrops.size})" else "Farm Crops & GPS (${farmCrops.size})")
                 TextButton(onClick = { onNavigate(Screen.Timeline.route) }) {
                     Text(
-                        text = if (isTamil) "காலவரிசை காண்க →" else "Timeline →",
+                        text = if (isTamil) "காலவரிசை →" else "Timeline →",
                         color = AgriGreenPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
@@ -188,11 +191,9 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(vertical = 4.dp)
+                contentPadding = PaddingValues(vertical = 2.dp)
             ) {
                 items(farmCrops) { crop ->
                     val isSelected = crop.id == selectedCropId
@@ -209,7 +210,7 @@ fun HomeScreen(
                     Card(
                         modifier = Modifier
                             .width(130.dp)
-                            .height(115.dp)
+                            .height(105.dp)
                             .clickable { showAddCropSheet = true },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -218,12 +219,12 @@ fun HomeScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(12.dp),
+                                .padding(10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(28.dp))
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(26.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = if (isTamil) "+ பயிர் சேர்" else "+ Add Crop",
                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, color = AgriGreenPrimary)
@@ -233,9 +234,9 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 3. Farm Health Score & Risk Overview Card for Active Crop
+            // 3. Crop-Specific Disease Risk & Pathology Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -243,78 +244,238 @@ fun HomeScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(modifier = Modifier.padding(18.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "${if (isTamil) activeCrop.cropNameTa else activeCrop.cropName} • ${if (isTamil) "ஆரோக்கிய நிலை" else "Health Score"}",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (isTamil) health.summaryTa else health.summaryEn,
-                                style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Card(
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (risk.level == RiskLevel.HIGH) Color(0xFFFFEBEE) else AgriGreenMint
+                                ),
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Icon(
+                                        Icons.Default.Shield,
+                                        contentDescription = null,
+                                        tint = if (risk.level == RiskLevel.HIGH) AgriRedAlert else AgriGreenPrimary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = if (isTamil) "பயிர் நோய் ஆய்வு (${activeCrop.cropNameTa})" else "Disease Analysis (${activeCrop.cropName})",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
+                                )
+                                Text(
+                                    text = "${if (isTamil) "முதன்மை அச்சுறுத்தல்: " else "Target: "}${risk.primaryRiskDisease}",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = AgriGreenDark, fontWeight = FontWeight.SemiBold)
+                                )
+                            }
                         }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        HealthScoreGauge(
-                            score = health.score,
-                            rating = health.rating,
-                            size = 90.dp,
-                            strokeWidth = 9.dp
-                        )
+                        RiskBadge(riskLevel = risk.level, isTamil = isTamil)
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    // Risk Indicator Bar
+                    Text(
+                        text = if (isTamil) risk.adviceTa else risk.adviceEn,
+                        style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary, lineHeight = 18.sp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color(0xFFF1F8F3))
-                            .padding(12.dp),
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = if (risk.level == RiskLevel.HIGH) AgriRedAlert else AgriGoldAmber,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            Icon(Icons.Default.Psychology, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = if (isTamil) "நோய் அபாய நிலை" else "Disease Risk:",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                                text = if (isTamil) "AI தொற்று சாத்தியக்கூறு: ${risk.scorePercentage}%" else "Infection Probability: ${risk.scorePercentage}%",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = AgriGreenDark)
                             )
                         }
-                        RiskBadge(riskLevel = risk.level, isTamil = isTamil)
+
+                        Text(
+                            text = if (isTamil) "ஆலோசனை பெறுக →" else "Consult AgriBot →",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = AgriGreenPrimary),
+                            modifier = Modifier.clickable {
+                                onNavigate(Screen.AgriBot.route)
+                            }
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 4. Quick Actions Grid
+            // 4. Crop-Specific Smart Irrigation Advice Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Card(
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD)),
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Icon(Icons.Default.WaterDrop, contentDescription = null, tint = Color(0xFF1976D2), modifier = Modifier.size(20.dp))
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = if (isTamil) "பாசன வழிகாட்டி (${activeCrop.cropNameTa})" else "Irrigation Advice (${activeCrop.cropName})",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
+                                )
+                                Text(
+                                    text = if (isTamil) "வளர்ச்சிப் பருவம்: ${activeCrop.currentStage.name}" else "Stage: ${activeCrop.currentStage.name}",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = TextSecondary)
+                                )
+                            }
+                        }
+
+                        // Action Badge
+                        val actionBg = when (irrigation?.action) {
+                            IrrigationAction.HOLD_DO_NOT_IRRIGATE -> Color(0xFFFFEBEE)
+                            IrrigationAction.INCREASE -> Color(0xFFFFF3E0)
+                            else -> AgriGreenMint
+                        }
+                        val actionColor = when (irrigation?.action) {
+                            IrrigationAction.HOLD_DO_NOT_IRRIGATE -> AgriRedAlert
+                            IrrigationAction.INCREASE -> AgriGoldAmber
+                            else -> AgriGreenPrimary
+                        }
+                        val actionLabel = when (irrigation?.action) {
+                            IrrigationAction.HOLD_DO_NOT_IRRIGATE -> if (isTamil) "பாசனம் வேண்டாம்" else "HOLD WATER"
+                            IrrigationAction.INCREASE -> if (isTamil) "கூடுதல் பாசனம்" else "INCREASE WATER"
+                            else -> if (isTamil) "வழக்கமான பாசனம்" else "OPTIMAL WATER"
+                        }
+
+                        Card(shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = actionBg)) {
+                            Text(
+                                text = actionLabel,
+                                color = actionColor,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = if (isTamil) (irrigation?.reasonTa ?: "பயிர் தேவைக்கேற்ப மிதமான பாசனம் செய்யவும்.")
+                               else (irrigation?.reasonEn ?: "Apply standard maintenance irrigation for optimal root health."),
+                        style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary, lineHeight = 18.sp)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFF1F8F3))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Opacity, contentDescription = null, tint = Color(0xFF1976D2), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "${if (isTamil) "அடுத்த பாசனம்: " else "Next Window: "}${irrigation?.nextIrrigationWindow ?: if (isTamil) "நாளை காலை" else "Tomorrow Morning"}",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
+                            )
+                        }
+
+                        if (irrigation?.waterVolumeLitersPerSqm != null && irrigation!!.waterVolumeLitersPerSqm > 0) {
+                            Text(
+                                text = "${irrigation!!.waterVolumeLitersPerSqm} L/m²",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, color = AgriGreenPrimary)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 5. Farm Health Score Overview Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (isTamil) "பண்ணை ஆரோக்கிய மதிப்பெண்" else "Overall Farm Health Score",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (isTamil) health.summaryTa else health.summaryEn,
+                            style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    HealthScoreGauge(
+                        score = health.score,
+                        rating = health.rating,
+                        size = 80.dp,
+                        strokeWidth = 8.dp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 6. Quick Services Grid
             SectionHeader(title = if (isTamil) "விரைவு சேவைகள்" else "Quick Services")
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 QuickActionPill(
                     title = if (isTamil) "பயிர் காலவரிசை" else "Crop Timeline",
-                    subtitle = if (isTamil) "பராமரிப்பு அட்டவணை" else "${activeCrop.tasks.count { !it.isCompleted }} Tasks Due",
+                    subtitle = if (isTamil) "${activeCrop.tasks.count { !it.isCompleted }} பணிகள் உள்ளன" else "${activeCrop.tasks.count { !it.isCompleted }} Tasks Due",
                     icon = Icons.Default.Timeline,
                     iconBg = Color(0xFFE8F5E9),
                     iconTint = AgriGreenPrimary,
@@ -323,8 +484,8 @@ fun HomeScreen(
                 )
 
                 QuickActionPill(
-                    title = if (isTamil) "இலை ஸ்கேன்" else "Diagnose Leaf",
-                    subtitle = if (isTamil) "AI கண்டறிதல்" else "TFLite AI",
+                    title = if (isTamil) "இலை ஸ்கேன் AI" else "Diagnose Leaf",
+                    subtitle = if (isTamil) "AI கண்டறிதல்" else "TFLite Scanner",
                     icon = Icons.Default.PhotoCamera,
                     iconBg = AgriGreenMint,
                     iconTint = AgriGreenPrimary,
@@ -333,16 +494,16 @@ fun HomeScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 QuickActionPill(
                     title = if (isTamil) "அக்ரிபாட் AI" else "AgriBot AI",
-                    subtitle = if (isTamil) "விவசாய ஆலோசனை" else "Tamil/English",
-                    icon = Icons.Default.Chat,
+                    subtitle = if (isTamil) "தமிழ்/English AI" else "Tamil/English Chat",
+                    icon = Icons.AutoMirrored.Filled.Chat,
                     iconBg = Color(0xFFFFF8E1),
                     iconTint = AgriGoldAmber,
                     modifier = Modifier.weight(1f),
@@ -350,8 +511,8 @@ fun HomeScreen(
                 )
 
                 QuickActionPill(
-                    title = if (isTamil) "வானிலை & அபாயம்" else "Weather & Risk",
-                    subtitle = if (isTamil) "முன்னறிவிப்பு" else "Forecast + Radar",
+                    title = if (isTamil) "வானிலை & ரேடார்" else "Weather & Radar",
+                    subtitle = if (isTamil) "நேரலை முன்னறிவிப்பு" else "Live Forecast",
                     icon = Icons.Default.Cloud,
                     iconBg = Color(0xFFE3F2FD),
                     iconTint = Color(0xFF1976D2),
@@ -360,16 +521,16 @@ fun HomeScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // 5. Recent Diagnosis Snapshot
+            // 7. Recent Diagnosis Snapshot
             SectionHeader(
                 title = if (isTamil) "சமீபத்திய பயிர் நோயறிதல்" else "Recent Crop Diagnosis",
                 actionText = if (isTamil) "மாதிரி தகவல்" else "Model Specs",
                 onActionClick = { onNavigate(Screen.ModelInfo.route) }
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             if (diagnosis == null) {
                 Card(
@@ -379,14 +540,14 @@ fun HomeScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Info, contentDescription = null, tint = AgriGreenPrimary)
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Icon(Icons.Default.Info, contentDescription = null, tint = AgriGreenPrimary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = if (isTamil) "இன்னும் பயிர் நோயறிதல் செய்யப்படவில்லை. இலை ஸ்கேன் செய்யவும்." else "No leaf scans recorded yet. Tap Diagnose to scan.",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+                            style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
                         )
                     }
                 }
@@ -400,7 +561,7 @@ fun HomeScreen(
                     border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -422,7 +583,7 @@ fun HomeScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
                             text = if (isTamil && diagnosis!!.treatmentTa.isNotBlank()) diagnosis!!.treatmentTa else diagnosis!!.treatmentEn,
@@ -433,7 +594,7 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(18.dp))
         }
     }
 
@@ -458,7 +619,7 @@ private fun CropSummaryCard(
     Card(
         modifier = Modifier
             .width(170.dp)
-            .height(115.dp)
+            .height(105.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = if (isSelected) AgriGreenMint else Color.White),
@@ -468,7 +629,7 @@ private fun CropSummaryCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp),
+                .padding(10.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -536,19 +697,19 @@ private fun QuickActionPill(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.Center
         ) {
             Card(
                 shape = RoundedCornerShape(10.dp),
                 colors = CardDefaults.cardColors(containerColor = iconBg),
-                modifier = Modifier.size(38.dp)
+                modifier = Modifier.size(36.dp)
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
+                    Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(text = title, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = TextPrimary))
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = TextSecondary))
         }

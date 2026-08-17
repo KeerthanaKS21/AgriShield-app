@@ -75,7 +75,7 @@ class AgriShieldApp : Application() {
         diagnosisRepository = DiagnosisRepository(cropClassifier, firestoreManager, storageManager)
         weatherRepository = WeatherRepository()
         agriBotRepository = AgriBotRepository()
-        farmHealthRepository = FarmHealthRepository(healthCalculator, riskEngine)
+        farmHealthRepository = FarmHealthRepository(healthCalculator, riskEngine, irrigationAdvisor)
         soilRepository = SoilRepository(soilEvaluator, firestoreManager)
         timelineRepository = TimelineRepository(firestoreManager)
     }

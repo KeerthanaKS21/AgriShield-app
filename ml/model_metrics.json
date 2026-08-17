@@ -1,0 +1,46 @@
+{
+    "model_name": "AgriShield-MobileNetV2-CropDisease",
+    "architecture": "MobileNetV2 Inverted Residual Bottlenecks",
+    "input_tensor_shape": [
+        1,
+        224,
+        224,
+        3
+    ],
+    "input_dtype": "float32 (normalized [0, 1])",
+    "output_tensor_shape": [
+        1,
+        17
+    ],
+    "output_dtype": "float32 (softmax probabilities)",
+    "num_classes": 17,
+    "classes": [
+        "Apple - Apple Scab",
+        "Apple - Black Rot",
+        "Apple - Healthy",
+        "Corn - Common Rust",
+        "Corn - Northern Leaf Blight",
+        "Corn - Healthy",
+        "Pepper - Bacterial Spot",
+        "Pepper - Healthy",
+        "Potato - Early Blight",
+        "Potato - Late Blight",
+        "Potato - Healthy",
+        "Rice - Brown Spot",
+        "Rice - Leaf Blast",
+        "Rice - Healthy",
+        "Tomato - Early Blight",
+        "Tomato - Late Blight",
+        "Tomato - Healthy"
+    ],
+    "test_accuracy": 0.948,
+    "test_precision": 0.945,
+    "test_recall": 0.942,
+    "test_f1_score": 0.943,
+    "training_dataset": "PlantVillage + Agricultural Field Disease Benchmark",
+    "recommended_confidence_thresholds": {
+        "high": 0.8,
+        "medium": 0.5,
+        "low": 0.0
+    }
+}

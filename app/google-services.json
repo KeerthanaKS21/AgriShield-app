@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "533555833332",
+    "project_id": "agrishield-570fb",
+    "storage_bucket": "agrishield-570fb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:533555833332:android:81aaeb26d59199e2e731a1",
+        "android_client_info": {
+          "package_name": "com.example.agrishield"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "533555833332-27l56oesu0b0oonng4qs4emsf8em6uhp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.agrishield",
+            "certificate_hash": "ec661ba1c3baf81f72a04afc49ecf5c58fe61557"
+          }
+        },
+        {
+          "client_id": "533555833332-3bbpgm7e0pja8ek69smc0fmuqb0fdv9g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsErpJhhWTNBcXJc0HHW5mvlWfdj8YpuU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "533555833332-3bbpgm7e0pja8ek69smc0fmuqb0fdv9g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

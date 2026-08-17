@@ -1,0 +1,101 @@
+<resources>
+    <string name="app_name">AgriShield</string>
+    <string name="app_tagline">AI-Powered Smart Farming Assistant</string>
+    <string name="app_tagline_sub">Protecting Crops • Predicting Risks • Maximizing Yields</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_diagnose">Diagnose</string>
+    <string name="nav_agribot">AgriBot</string>
+    <string name="nav_weather">Weather</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Authentication -->
+    <string name="login_title">Welcome to AgriShield</string>
+    <string name="login_subtitle">Sign in to monitor your farm with AI</string>
+    <string name="email_hint">Farmer Email</string>
+    <string name="password_hint">Password</string>
+    <string name="name_hint">Farmer Full Name</string>
+    <string name="farm_location_hint">Village / Region</string>
+    <string name="btn_login">Sign In</string>
+    <string name="btn_register">Register New Account</string>
+    <string name="btn_logout">Log Out</string>
+    <string name="no_account">Don\'t have an account? Sign up</string>
+    <string name="have_account">Already have an account? Sign in</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_greeting">Vanakkam, Farmer %s</string>
+    <string name="farm_health_score">Farm Health Score</string>
+    <string name="farm_health_desc">Real-time health index based on diagnoses, weather risk, and soil</string>
+    <string name="current_crop">Primary Crop</string>
+    <string name="disease_risk_title">Disease Risk Level</string>
+    <string name="recent_diagnosis">Recent Diagnosis</string>
+    <string name="quick_actions">Quick Farming Actions</string>
+    <string name="action_diagnose">Scan Crop Leaf</string>
+    <string name="action_ask_ai">Ask AgriBot</string>
+    <string name="action_weather">Weather &amp; Risk</string>
+    <string name="action_soil">Soil Health</string>
+    <string name="action_timeline">Crop Care Timeline</string>
+
+    <!-- Disease Detection -->
+    <string name="diagnose_title">Crop Disease Diagnosis</string>
+    <string name="diagnose_instruction">Take a clear, close-up photo of the affected plant leaf in good lighting.</string>
+    <string name="btn_capture_camera">Capture with Camera</string>
+    <string name="btn_select_gallery">Select from Gallery</string>
+    <string name="btn_analyze_leaf">Analyze Leaf with AI</string>
+    <string name="prediction_crop">Crop: %s</string>
+    <string name="prediction_disease">Diagnosis: %s</string>
+    <string name="prediction_confidence">Confidence: %.1f%%</string>
+    <string name="confidence_high">High Confidence (≥80%)</string>
+    <string name="confidence_medium">Medium Confidence (50-79%)</string>
+    <string name="confidence_low">Low Confidence (&lt;50%)</string>
+    <string name="low_confidence_warning">Unable to confidently identify the disease. Please capture a clearer, well-lit image of the affected leaf.</string>
+    <string name="recommended_action">Recommended Action</string>
+    <string name="btn_save_diagnosis">Save to Farm Records</string>
+    <string name="btn_ask_agribot_about_disease">Consult AgriBot for Treatment</string>
+
+    <!-- AgriBot -->
+    <string name="agribot_title">AgriBot AI Assistant</string>
+    <string name="agribot_subtitle">Gemini-Powered Agricultural Advisor</string>
+    <string name="agribot_hint">Type in Tamil or English, or tap Mic to speak...</string>
+    <string name="btn_send">Send</string>
+    <string name="listening_speech">Listening... Speak now in Tamil or English</string>
+    <string name="speech_lang_ta">Tamil (தமிழ்)</string>
+    <string name="speech_lang_en">English</string>
+    <string name="chip_rice_yellow">My rice leaves are turning yellow</string>
+    <string name="chip_tomato_spots">தக்காளி இலைகளில் கருப்பு புள்ளிகள்</string>
+    <string name="chip_rain_fertilizer">மழை வரப்போகிறது, உரம் இடலாமா?</string>
+    <string name="chip_irrigation">இன்றைய பாசன அளவு என்ன?</string>
+
+    <!-- Weather & Risk -->
+    <string name="weather_title">Weather &amp; Disease Risk</string>
+    <string name="weather_temp">Temperature</string>
+    <string name="weather_humidity">Humidity</string>
+    <string name="weather_wind">Wind Speed</string>
+    <string name="weather_rain">Rain Probability</string>
+    <string name="forecast_5day">5-Day Agricultural Forecast</string>
+    <string name="irrigation_recommendation_title">Dynamic Irrigation Advisory</string>
+    <string name="risk_breakdown">Agronomic Disease Risk Breakdown</string>
+
+    <!-- Soil Health -->
+    <string name="soil_title">Soil Health Assessment</string>
+    <string name="soil_notice">Values are entered manually based on soil test reports</string>
+    <string name="label_nitrogen">Nitrogen (N) [mg/kg]</string>
+    <string name="label_phosphorus">Phosphorus (P) [mg/kg]</string>
+    <string name="label_potassium">Potassium (K) [mg/kg]</string>
+    <string name="label_ph">Soil pH (0-14)</string>
+    <string name="label_moisture">Soil Moisture (%)</string>
+    <string name="btn_evaluate_soil">Evaluate Soil Health</string>
+
+    <!-- Model Info -->
+    <string name="model_info_title">TensorFlow Lite Model Transparency</string>
+    <string name="model_architecture">Architecture: MobileNetV2 (Transfer Learning)</string>
+    <string name="model_dataset">Dataset: PlantVillage &amp; Agricultural Multi-Crop Datasets</string>
+    <string name="model_classes">Supported Crop Classes: 15 Classes</string>
+
+    <!-- Error Messages -->
+    <string name="err_no_internet">No internet connection. Please verify your network.</string>
+    <string name="err_weather_failed">Weather data unavailable. Please try again.</string>
+    <string name="err_gemini_failed">AgriBot is currently unavailable. Please check your API key or network.</string>
+    <string name="err_inference_failed">Model inference failed. Ensure the image is a valid crop leaf.</string>
+</resources>

@@ -1,0 +1,10 @@
+## AgriShield Local Properties Template
+# Location of the SDK. This is only used by Gradle.
+sdk.dir=C\:\\Users\\keert\\AppData\\Local\\Android\\Sdk
+
+# AgriShield API Credentials (Do NOT commit real keys to version control)
+# Get Gemini API key at: https://aistudio.google.com/
+GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
+
+# Get OpenWeatherMap API key at: https://openweathermap.org/api
+OPENWEATHER_API_KEY="YOUR_OPENWEATHERMAP_API_KEY_HERE"

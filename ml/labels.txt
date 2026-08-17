@@ -1,0 +1,17 @@
+Apple - Apple Scab
+Apple - Black Rot
+Apple - Healthy
+Corn - Common Rust
+Corn - Northern Leaf Blight
+Corn - Healthy
+Pepper - Bacterial Spot
+Pepper - Healthy
+Potato - Early Blight
+Potato - Late Blight
+Potato - Healthy
+Rice - Brown Spot
+Rice - Leaf Blast
+Rice - Healthy
+Tomato - Early Blight
+Tomato - Late Blight
+Tomato - Healthy

@@ -70,13 +70,16 @@ class HomeViewModel(
             soilRepository.loadLatestSoil(userId)
 
             // 4. Update Farm Health Score & Risk engine
+            val days = ((System.currentTimeMillis() - active.sowingDateEpoch) / (24L * 60 * 60 * 1000)).toInt().coerceAtLeast(1)
             farmHealthRepository.updateMetrics(
                 recentDiagnosis = latestDiagnosis.value,
                 weather = currentWeather.value,
                 forecast = weatherRepository.forecast.value,
                 soilData = soilRepository.latestSoil.value,
                 careTasks = active.tasks,
-                primaryCrop = active.cropName
+                primaryCrop = active.cropName,
+                growthStage = active.currentStage,
+                daysSinceSowing = days
             )
         }
     }
@@ -87,13 +90,16 @@ class HomeViewModel(
             val lon = crop.longitude ?: 76.9558
             weatherRepository.fetchWeather(lat, lon)
 
+            val days = ((System.currentTimeMillis() - crop.sowingDateEpoch) / (24L * 60 * 60 * 1000)).toInt().coerceAtLeast(1)
             farmHealthRepository.updateMetrics(
                 recentDiagnosis = latestDiagnosis.value,
                 weather = currentWeather.value,
                 forecast = weatherRepository.forecast.value,
                 soilData = soilRepository.latestSoil.value,
                 careTasks = crop.tasks,
-                primaryCrop = crop.cropName
+                primaryCrop = crop.cropName,
+                growthStage = crop.currentStage,
+                daysSinceSowing = days
             )
         }
     }

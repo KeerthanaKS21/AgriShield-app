@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.agrishield.app.data.ml.CropRiskEngine
 import com.agrishield.app.data.ml.IrrigationAdvisor
 import com.agrishield.app.data.model.CropRisk
+import com.agrishield.app.data.model.CropTimeline
 import com.agrishield.app.data.model.ForecastItem
 import com.agrishield.app.data.model.IrrigationAdvice
 import com.agrishield.app.data.model.WeatherData
 import com.agrishield.app.data.repository.AuthRepository
 import com.agrishield.app.data.repository.DiagnosisRepository
 import com.agrishield.app.data.repository.SoilRepository
+import com.agrishield.app.data.repository.TimelineRepository
 import com.agrishield.app.data.repository.WeatherRepository
 import com.agrishield.app.utils.LocationHelper
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +26,7 @@ class WeatherRiskViewModel(
     private val soilRepository: SoilRepository,
     private val authRepository: AuthRepository,
     private val locationHelper: LocationHelper,
+    private val timelineRepository: TimelineRepository,
     private val riskEngine: CropRiskEngine = CropRiskEngine(),
     private val irrigationAdvisor: IrrigationAdvisor = IrrigationAdvisor()
 ) : ViewModel() {
@@ -33,6 +36,11 @@ class WeatherRiskViewModel(
     val isLoading: StateFlow<Boolean> = weatherRepository.isLoading
     val error: StateFlow<String?> = weatherRepository.error
 
+    // Strictly the crops the farmer actually has in their farm
+    val farmCrops: StateFlow<List<CropTimeline>> = timelineRepository.crops
+    val selectedCrop: StateFlow<CropTimeline> = timelineRepository.timeline
+    val selectedCropId: StateFlow<String> = timelineRepository.selectedCropId
+
     private val _cropRisk = MutableStateFlow<CropRisk?>(null)
     val cropRisk: StateFlow<CropRisk?> = _cropRisk.asStateFlow()
 
@@ -40,29 +48,55 @@ class WeatherRiskViewModel(
     val irrigationAdvice: StateFlow<IrrigationAdvice?> = _irrigationAdvice.asStateFlow()
 
     init {
-        loadWeatherAndRisk()
+        viewModelScope.launch {
+            timelineRepository.timeline.collect { activeCrop ->
+                loadWeatherAndEvaluateForCrop(activeCrop)
+            }
+        }
+    }
+
+    fun selectCrop(cropId: String) {
+        timelineRepository.selectCrop(cropId)
+        val crop = farmCrops.value.find { it.id == cropId } ?: selectedCrop.value
+        loadWeatherAndEvaluateForCrop(crop)
     }
 
     fun loadWeatherAndRisk(customApiKey: String? = null) {
+        loadWeatherAndEvaluateForCrop(selectedCrop.value, customApiKey)
+    }
+
+    private fun loadWeatherAndEvaluateForCrop(crop: CropTimeline, customApiKey: String? = null) {
         viewModelScope.launch {
-            val location = locationHelper.getCurrentLocation()
-            val lat = location?.latitude ?: 11.0168 // Default: Coimbatore, TN
-            val lon = location?.longitude ?: 76.9558
+            val lat = crop.latitude ?: locationHelper.getCurrentLocation()?.latitude ?: 11.0168
+            val lon = crop.longitude ?: locationHelper.getCurrentLocation()?.longitude ?: 76.9558
 
             val result = weatherRepository.fetchWeather(lat, lon, customApiKey)
-            if (result.isSuccess) {
-                val weather = result.getOrNull()!!
-                val crop = authRepository.currentUser.value?.primaryCrop ?: "Tomato"
+            val weather = result.getOrNull() ?: currentWeather.value
+
+            if (weather != null) {
                 val diagnosis = diagnosisRepository.latestDiagnosis.value
+                val soilMoisture = soilRepository.latestSoil.value?.moisturePercent ?: 48.0
+                val daysSinceSowing = ((System.currentTimeMillis() - crop.sowingDateEpoch) / (24L * 60 * 60 * 1000)).toInt().coerceAtLeast(1)
 
-                // Evaluate real risk
-                val risk = riskEngine.calculateRisk(weather, crop, diagnosis?.disease)
-                _cropRisk.value = risk
+                // 1. Stage & Timeline-Aware Disease Risk Analysis
+                _cropRisk.value = riskEngine.calculateRisk(
+                    weather = weather,
+                    cropType = crop.cropName,
+                    growthStage = crop.currentStage,
+                    daysSinceSowing = daysSinceSowing,
+                    recentDiseaseDiagnosis = diagnosis?.disease
+                )
 
-                // Evaluate dynamic irrigation
-                val soilMoisture = soilRepository.latestSoil.value?.moisturePercent ?: 45.0
-                val advice = irrigationAdvisor.getAdvice(weather, forecast.value, soilMoisture, crop)
-                _irrigationAdvice.value = advice
+                // 2. Stage & Timeline-Aware Smart Irrigation Advice
+                _irrigationAdvice.value = irrigationAdvisor.getAdvice(
+                    weather = weather,
+                    forecast = forecast.value,
+                    soilMoisture = soilMoisture,
+                    crop = crop.cropName,
+                    growthStage = crop.currentStage,
+                    daysSinceSowing = daysSinceSowing,
+                    scheduledTasks = crop.tasks
+                )
             }
         }
     }

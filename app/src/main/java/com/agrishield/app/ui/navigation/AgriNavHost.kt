@@ -70,7 +70,8 @@ fun AgriNavHost(
         app.diagnosisRepository,
         app.soilRepository,
         app.authRepository,
-        app.locationHelper
+        app.locationHelper,
+        app.timelineRepository
     )
     val soilViewModel = SoilViewModel(app.soilRepository, app.authRepository)
     val timelineViewModel = TimelineViewModel(app.timelineRepository, app.authRepository, app.locationHelper)

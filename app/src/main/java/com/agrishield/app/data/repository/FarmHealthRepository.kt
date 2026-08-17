@@ -35,10 +35,18 @@ class FarmHealthRepository(
         forecast: List<ForecastItem> = emptyList(),
         soilData: SoilData?,
         careTasks: List<CareTask>,
-        primaryCrop: String = "Tomato"
+        primaryCrop: String = "Tomato",
+        growthStage: com.agrishield.app.data.model.GrowthStage = com.agrishield.app.data.model.GrowthStage.VEGETATIVE,
+        daysSinceSowing: Int = 30
     ) {
         val calculatedRisk = if (weather != null) {
-            riskEngine.calculateRisk(weather, primaryCrop, recentDiagnosis?.disease)
+            riskEngine.calculateRisk(
+                weather = weather,
+                cropType = primaryCrop,
+                growthStage = growthStage,
+                daysSinceSowing = daysSinceSowing,
+                recentDiseaseDiagnosis = recentDiagnosis?.disease
+            )
         } else {
             CropRisk()
         }
@@ -57,7 +65,10 @@ class FarmHealthRepository(
                 weather = weather,
                 forecast = forecast,
                 soilMoisture = soilData?.moisturePercent ?: 48.0,
-                crop = primaryCrop
+                crop = primaryCrop,
+                growthStage = growthStage,
+                daysSinceSowing = daysSinceSowing,
+                scheduledTasks = careTasks
             )
         }
     }
